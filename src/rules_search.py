@@ -108,21 +108,32 @@ class RulesSearch:
     def _upload_texts(self):
         """Upload texts with embeddings to Qdrant if collection is empty"""
         if self.qdrant.get_collection('rules').vectors_count == 0:
-            points = []
-            for i, chunk in enumerate(self.rules_chunks):
-                vector = self._get_embedding(chunk)
-                points.append(models.PointStruct(
-                    id=i,
-                    vector=vector,
-                    payload={
-                        'text': chunk,
-                    }
-                ))
+            # Process in batches of 100
+            batch_size = 100
             
-            self.qdrant.upload_points(
-                collection_name='rules',
-                points=points
-            )
+            for batch_start in range(0, len(self.rules_chunks), batch_size):
+                batch_end = min(batch_start + batch_size, len(self.rules_chunks))
+                points = []
+                
+                # Process each chunk in the current batch
+                for i in range(batch_start, batch_end):
+                    chunk = self.rules_chunks[i]
+                    vector = self._get_embedding(chunk)
+                    points.append(models.PointStruct(
+                        id=i,
+                        vector=vector,
+                        payload={
+                            'text': chunk,
+                        }
+                    ))
+                
+                # Upload the batch
+                if points:
+                    self.qdrant.upload_points(
+                        collection_name='rules',
+                        points=points,
+                        wait=True  # Ensure upload completes before next batch
+                    )
 
     def search(self, query: str, k: int = 3) -> List[Dict]:
         """Perform hybrid search using both BM25 and semantic search with Qdrant.
