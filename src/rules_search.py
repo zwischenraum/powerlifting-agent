@@ -3,13 +3,12 @@ import json
 from pathlib import Path
 import numpy as np
 from rank_bm25 import BM25Okapi
-from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
+from qdrant_client.http.models import Distance, TextConfig, VectorParams
 
 class RulesSearch:
     def __init__(self, rules_file: str = "data/ipf_rules.json"):
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
         self.rules_file = Path(rules_file)
         self.rules_data = self._load_rules()
         self.rules_text = [rule['text'] for rule in self.rules_data]
@@ -18,14 +17,14 @@ class RulesSearch:
         tokenized_rules = [text.split() for text in self.rules_text]
         self.bm25 = BM25Okapi(tokenized_rules)
         
-        # Initialize Qdrant client
+        # Initialize Qdrant client with text encoder
         self.qdrant = QdrantClient(host="localhost", port=6333)
         
         # Create collection if it doesn't exist
         self._init_collection()
         
-        # Upload vectors if collection is empty
-        self._upload_vectors()
+        # Upload texts if collection is empty
+        self._upload_texts()
 
     def _load_rules(self) -> List[Dict]:
         """Load rules from JSON file."""
@@ -35,29 +34,39 @@ class RulesSearch:
             return json.load(f)
 
     def _init_collection(self):
-        """Initialize Qdrant collection"""
+        """Initialize Qdrant collection with text indexing"""
         try:
             self.qdrant.get_collection('rules')
         except:
             self.qdrant.create_collection(
                 collection_name='rules',
-                vectors_config=models.VectorParams(
-                    size=384,  # MiniLM-L6-v2 embedding size
-                    distance=models.Distance.COSINE
-                )
+                vectors_config=VectorParams(
+                    size=384,  # Default size for onnx text encoder
+                    distance=Distance.COSINE
+                ),
+                sparse_vectors_config={
+                    "text": TextConfig(
+                        tokenizer=TextConfig.Tokenizer(
+                            type="word",
+                            lowercase=True,
+                            min_token_len=2,
+                            max_token_len=20,
+                        )
+                    )
+                }
             )
     
-    def _upload_vectors(self):
-        """Upload vectors to Qdrant if collection is empty"""
+    def _upload_texts(self):
+        """Upload texts to Qdrant if collection is empty"""
         if self.qdrant.get_collection('rules').vectors_count == 0:
-            embeddings = self.model.encode(self.rules_text)
-            
             points = []
-            for i, (embedding, rule) in enumerate(zip(embeddings, self.rules_data)):
+            for i, rule in enumerate(self.rules_data):
                 points.append(models.PointStruct(
                     id=i,
-                    vector=embedding.tolist(),
-                    payload={'text': rule['text']}
+                    payload={
+                        'text': rule['text'],
+                        '@text': rule['text']  # Special field for text indexing
+                    }
                 ))
             
             self.qdrant.upload_points(
@@ -81,12 +90,12 @@ class RulesSearch:
         bm25_scores = self.bm25.get_scores(query.split())
         bm25_scores = (bm25_scores - np.min(bm25_scores)) / (np.max(bm25_scores) - np.min(bm25_scores))
         
-        # Semantic search scoring using Qdrant
-        query_embedding = self.model.encode(query)
+        # Semantic search scoring using Qdrant's text encoder
         semantic_results = self.qdrant.search(
             collection_name='rules',
-            query_vector=query_embedding,
-            limit=len(self.rules_text)  # Get all scores for hybrid ranking
+            query_text=query,
+            limit=len(self.rules_text),  # Get all scores for hybrid ranking
+            query_filter=None
         )
         
         # Create semantic scores array
