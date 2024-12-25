@@ -86,11 +86,15 @@ class RulesSearch:
 
     def _init_collection(self):
         """Initialize Qdrant collection with text indexing"""
+        collection_name = 'rules'
         try:
-            self.qdrant.get_collection('rules')
-        except:
-            self.qdrant.create_collection(
-                collection_name='rules',
+            # Try to get the collection
+            collection_info = self.qdrant.get_collection(collection_name)
+            print(f"Collection exists with {collection_info.vectors_count} vectors")
+        except Exception as e:
+            print(f"Creating new collection: {collection_name}")
+            self.qdrant.recreate_collection(
+                collection_name=collection_name,
                 vectors_config=VectorParams(
                     size=1536,  # Size for OpenAI embeddings
                     distance=Distance.COSINE
@@ -107,13 +111,18 @@ class RulesSearch:
 
     def _upload_texts(self):
         """Upload texts with embeddings to Qdrant if collection is empty"""
-        if self.qdrant.get_collection('rules').vectors_count == 0:
+        collection_info = self.qdrant.get_collection('rules')
+        
+        if collection_info.vectors_count == 0:
+            print(f"Uploading {len(self.rules_chunks)} text chunks to Qdrant...")
             # Process in batches of 100
             batch_size = 100
             
             for batch_start in range(0, len(self.rules_chunks), batch_size):
                 batch_end = min(batch_start + batch_size, len(self.rules_chunks))
                 points = []
+                
+                print(f"Processing batch {batch_start}-{batch_end}...")
                 
                 # Process each chunk in the current batch
                 for i in range(batch_start, batch_end):
@@ -129,11 +138,18 @@ class RulesSearch:
                 
                 # Upload the batch
                 if points:
-                    self.qdrant.upload_points(
-                        collection_name='rules',
-                        points=points,
-                        wait=True  # Ensure upload completes before next batch
-                    )
+                    try:
+                        self.qdrant.upload_points(
+                            collection_name='rules',
+                            points=points,
+                            wait=True  # Ensure upload completes before next batch
+                        )
+                        print(f"Successfully uploaded batch {batch_start}-{batch_end}")
+                    except Exception as e:
+                        print(f"Error uploading batch: {str(e)}")
+                        raise
+        else:
+            print(f"Collection already contains {collection_info.vectors_count} vectors")
 
     def search(self, query: str, k: int = 3) -> List[Dict]:
         """Perform hybrid search using both BM25 and semantic search with Qdrant.
