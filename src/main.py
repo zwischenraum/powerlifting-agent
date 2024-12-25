@@ -3,6 +3,7 @@ from os import getenv
 
 from openai import OpenAI
 from swarm import Swarm, Agent
+from rules_search import search_rules
 
 from dotenv import load_dotenv
 from swarm.repl import run_demo_loop
@@ -21,7 +22,9 @@ If a user wants to know more about a particular powerlifting rule, please redire
 
 SEARCH_INSTRUCTIONS = """You are a helpful search agent, that helps lifters search openpowerlifting.org. If a user wants to know any (historical) records of a lifter, please search on openpowerlifting.org."""
 
-RULES_INSTRUCTIONS = ""
+RULES_INSTRUCTIONS = """You are a helpful agent that assists with powerlifting rule questions.
+You can search the IPF rulebook to find relevant rules and explain them in a clear way.
+Always use the search_rules function to find relevant rules before answering questions."""
 
 
 def search_openpowerlifting(lifter_name: str) -> str:
@@ -76,7 +79,7 @@ def main():
     chat = Agent(
         name="Chat Agent",
         instructions=CHAT_INSTRUCTIONS,
-        functions=[redirect_to_router_agent]
+        functions=[redirect_to_router_agent, search_rules]
     )
 
     rule = Agent(
