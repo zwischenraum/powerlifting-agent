@@ -1,4 +1,5 @@
 from typing import List, Dict
+import logging
 from pathlib import Path
 import numpy as np
 from rank_bm25 import BM25Okapi
@@ -90,9 +91,9 @@ class RulesSearch:
         try:
             # Try to get the collection
             collection_info = self.qdrant.get_collection(collection_name)
-            print(f"Collection exists with {collection_info.points_count} vectors")
+            logging.info(f"Collection exists with {collection_info.points_count} vectors")
         except Exception as e:
-            print(f"Creating new collection: {collection_name}")
+            logging.info(f"Creating new collection: {collection_name}")
             self.qdrant.recreate_collection(
                 collection_name=collection_name,
                 vectors_config=VectorParams(
@@ -102,7 +103,7 @@ class RulesSearch:
             )
             # Get updated collection info
             collection_info = self.qdrant.get_collection(collection_name)
-            print(f"Created new collection with {collection_info.points_count} vectors")
+            logging.info(f"Created new collection with {collection_info.points_count} vectors")
     
     def _get_embedding(self, text: str) -> List[float]:
         """Get embedding for text using OpenAI API."""
@@ -117,7 +118,7 @@ class RulesSearch:
         collection_info = self.qdrant.get_collection('rules')
         
         if collection_info.points_count == 0:
-            print(f"Getting embeddings for {len(self.rules_chunks)} text chunks...")
+            logging.debug(f"Getting embeddings for {len(self.rules_chunks)} text chunks...")
             
             # Get embeddings for all chunks at once
             response = self.openai.embeddings.create(
@@ -126,7 +127,7 @@ class RulesSearch:
             )
             embeddings = [item.embedding for item in response.data]
             
-            print("Creating points...")
+            logging.debug("Creating points...")
             points = [
                 models.PointStruct(
                     id=i,
@@ -136,19 +137,19 @@ class RulesSearch:
                 for i, (chunk, embedding) in enumerate(zip(self.rules_chunks, embeddings))
             ]
             
-            print("Uploading points to Qdrant...")
+            logging.debug("Uploading points to Qdrant...")
             try:
                 self.qdrant.upload_points(
                     collection_name='rules',
                     points=points,
                     wait=True
                 )
-                print("Successfully uploaded all points")
+                logging.info("Successfully uploaded all points")
             except Exception as e:
-                print(f"Error uploading points: {str(e)}")
+                logging.error(f"Error uploading points: {str(e)}")
                 raise
         else:
-            print(f"Collection already contains {collection_info.points_count} vectors")
+            logging.info(f"Collection already contains {collection_info.points_count} vectors")
 
     def search(self, query: str, k: int = 3) -> List[Dict]:
         """Perform hybrid search using both BM25 and semantic search with Qdrant.

@@ -1,7 +1,8 @@
 import re
 from os import getenv
-
+import logging
 from openai import OpenAI
+from logger import setup_logger
 from swarm import Swarm, Agent
 from rules_search import search_rules
 
@@ -71,6 +72,10 @@ def search_openpowerlifting(lifter_name: str) -> str:
 
 
 def main():
+    # Initialize logging
+    logger = setup_logger()
+    logger.debug("Starting powerlifting agent application")
+    
     openai_client = OpenAI(api_key=getenv('OPENAI_API_KEY'), base_url=getenv('OPENAI_BASE_URL'))
     client = Swarm(openai_client)
 
