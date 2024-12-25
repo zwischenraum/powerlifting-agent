@@ -5,7 +5,8 @@ import numpy as np
 from rank_bm25 import BM25Okapi
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
-from qdrant_client.http.models import Distance, TextConfig, VectorParams
+from qdrant_client.http.models import Distance, VectorParams
+from openai import OpenAI
 
 class RulesSearch:
     """A hybrid search engine for powerlifting rules combining BM25 and semantic search.
@@ -18,7 +19,7 @@ class RulesSearch:
     # Constant for RRF calculation (typical value is 60)
     RRF_C = 60
     
-    def __init__(self, rules_file: str = "data/ipf_rules.json"):
+    def __init__(self, rules_file: str = "data/ipf_rules.json", openai_client: OpenAI = None):
         """Initialize the search engine.
         
         Args:
@@ -32,8 +33,9 @@ class RulesSearch:
         tokenized_rules = [text.split() for text in self.rules_text]
         self.bm25 = BM25Okapi(tokenized_rules)
         
-        # Initialize Qdrant client with text encoder
+        # Initialize clients
         self.qdrant = QdrantClient(host="localhost", port=6333)
+        self.openai = openai_client or OpenAI()
         
         # Create collection if it doesn't exist
         self._init_collection()
@@ -56,29 +58,28 @@ class RulesSearch:
             self.qdrant.create_collection(
                 collection_name='rules',
                 vectors_config=VectorParams(
-                    size=384,  # Default size for onnx text encoder
+                    size=1536,  # Size for OpenAI embeddings
                     distance=Distance.COSINE
-                ),
-                sparse_vectors_config={
-                    "text": TextConfig(
-                        tokenizer=TextConfig.Tokenizer(
-                            type="word",
-                            lowercase=True,
-                            min_token_len=2,
-                            max_token_len=20,
-                        )
-                    )
-                }
+                )
             )
     
+    def _get_embedding(self, text: str) -> List[float]:
+        """Get embedding for text using OpenAI API."""
+        response = self.openai.embeddings.create(
+            model="text-embedding-ada-002",
+            input=text
+        )
+        return response.data[0].embedding
+
     def _upload_texts(self):
-        """Upload texts to Qdrant if collection is empty"""
+        """Upload texts with embeddings to Qdrant if collection is empty"""
         if self.qdrant.get_collection('rules').vectors_count == 0:
             points = []
             for i, rule in enumerate(self.rules_data):
+                vector = self._get_embedding(rule['text'])
                 points.append(models.PointStruct(
                     id=i,
-                    vector=rule,
+                    vector=vector,
                     payload={
                         'text': rule['text'],
                     }
@@ -107,12 +108,12 @@ class RulesSearch:
         bm25_scores = self.bm25.get_scores(query.split())
         bm25_ranks = (-bm25_scores).argsort()
         
-        # Get semantic search rankings
+        # Get semantic search rankings using embeddings
+        query_vector = self._get_embedding(query)
         semantic_results = self.qdrant.search(
             collection_name='rules',
-            query_text=query,  # Using text search instead of vector
-            limit=len(self.rules_text),
-            query_filter=None
+            query_vector=query_vector,
+            limit=len(self.rules_text)
         )
         
         # Convert semantic results to ranks
@@ -138,10 +139,10 @@ class RulesSearch:
             
         return results
 
-def search_rules(query: str) -> str:
+def search_rules(query: str, openai_client: OpenAI = None) -> str:
     """Function to be used by the Rules Agent."""
     try:
-        searcher = RulesSearch()
+        searcher = RulesSearch(openai_client=openai_client)
         results = searcher.search(query)
         
         # Format results as a readable string
