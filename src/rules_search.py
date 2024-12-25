@@ -82,6 +82,19 @@ class RulesSearch:
         if current_chunk:
             chunks.append(' '.join(current_chunk))
             
+        # Debug output
+        print("\n=== Rules Chunks ===")
+        print(f"Total chunks: {len(chunks)}")
+        print(f"Average chunk size: {sum(len(chunk.split()) for chunk in chunks)/len(chunks):.1f} words")
+        print("\nChunk details:")
+        for i, chunk in enumerate(chunks, 1):
+            words = len(chunk.split())
+            print(f"\nChunk {i}:")
+            print(f"Word count: {words}")
+            print(f"First 50 chars: {chunk[:50]}...")
+            print(f"Last 50 chars: ...{chunk[-50:]}")
+            print("-" * 80)
+            
         return chunks
 
     def _init_collection(self):
