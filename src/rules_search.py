@@ -117,42 +117,38 @@ class RulesSearch:
         collection_info = self.qdrant.get_collection('rules')
         
         if collection_info.points_count == 0:
-            print(f"Uploading {len(self.rules_chunks)} text chunks to Qdrant...")
-            # Process in batches of 100
-            batch_size = 100
+            print(f"Getting embeddings for {len(self.rules_chunks)} text chunks...")
             
-            for batch_start in range(0, len(self.rules_chunks), batch_size):
-                batch_end = min(batch_start + batch_size, len(self.rules_chunks))
-                points = []
-                
-                print(f"Processing batch {batch_start}-{batch_end}...")
-                
-                # Process each chunk in the current batch
-                for i in range(batch_start, batch_end):
-                    chunk = self.rules_chunks[i]
-                    vector = self._get_embedding(chunk)
-                    points.append(models.PointStruct(
-                        id=i,
-                        vector=vector,
-                        payload={
-                            'text': chunk,
-                        }
-                    ))
-                
-                # Upload the batch
-                if points:
-                    try:
-                        self.qdrant.upload_points(
-                            collection_name='rules',
-                            points=points,
-                            wait=True  # Ensure upload completes before next batch
-                        )
-                        print(f"Successfully uploaded batch {batch_start}-{batch_end}")
-                    except Exception as e:
-                        print(f"Error uploading batch: {str(e)}")
-                        raise
+            # Get embeddings for all chunks at once
+            response = self.openai.embeddings.create(
+                model="text-embedding-ada-002",
+                input=self.rules_chunks
+            )
+            embeddings = [item.embedding for item in response.data]
+            
+            print("Creating points...")
+            points = [
+                models.PointStruct(
+                    id=i,
+                    vector=embedding,
+                    payload={'text': chunk}
+                )
+                for i, (chunk, embedding) in enumerate(zip(self.rules_chunks, embeddings))
+            ]
+            
+            print("Uploading points to Qdrant...")
+            try:
+                self.qdrant.upload_points(
+                    collection_name='rules',
+                    points=points,
+                    wait=True
+                )
+                print("Successfully uploaded all points")
+            except Exception as e:
+                print(f"Error uploading points: {str(e)}")
+                raise
         else:
-            print(f"Collection already contains {collection_info.vectors_count} vectors")
+            print(f"Collection already contains {collection_info.points_count} vectors")
 
     def search(self, query: str, k: int = 3) -> List[Dict]:
         """Perform hybrid search using both BM25 and semantic search with Qdrant.
