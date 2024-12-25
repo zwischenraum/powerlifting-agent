@@ -166,9 +166,16 @@ class RulesSearch:
         
         results = []
         for idx in top_k_idx:
+            # Get individual scores
+            bm25_score = float(bm25_scores[idx])
+            semantic_score = 1.0 - float(semantic_ranks[idx] / len(self.rules_chunks))  # Convert rank to similarity
+            rrf_score = float(rrf_scores[idx])
+            
             results.append({
                 'text': self.rules_chunks[idx],
-                'score': float(rrf_scores[idx])
+                'bm25_score': bm25_score,
+                'semantic_score': semantic_score, 
+                'rrf_score': rrf_score
             })
             
         return results
@@ -183,7 +190,9 @@ def search_rules(query: str, openai_client: OpenAI = None) -> str:
         output = "Here are the most relevant rules:\n\n"
         for i, result in enumerate(results, 1):
             output += f"{i}. {result['text']}\n"
-            output += f"   (Score: {result['score']:.3f})\n\n"
+            output += f"   BM25 Score: {result['bm25_score']:.3f}\n"
+            output += f"   Semantic Score: {result['semantic_score']:.3f}\n"
+            output += f"   RRF Score: {result['rrf_score']:.3f}\n\n"
         
         return output
     except Exception as e:
