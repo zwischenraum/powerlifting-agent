@@ -28,22 +28,44 @@ Always use the search_rules function to find relevant rules before answering que
 
 
 def search_openpowerlifting(lifter_name: str) -> str:
-    """Search openpowerlifting.org for a lifter.
+    """Search openpowerlifting.org for a lifter's competition history.
 
-    lifter_name: The name of the lifter to search for."""
-    from requests import get
+    Args:
+        lifter_name: The name of the lifter to search for. Should match their name
+                    as it appears on openpowerlifting.org.
 
-    url = f"http://openpowerlifting.org/lifters.html?q={lifter_name}"
-    response = get(url)
+    Returns:
+        str: The lifter's competition history in CSV format if found,
+             or an error message if the search fails.
 
-    match = re.search(r'/api/liftercsv/([^"]+)', response.text)
+    Note:
+        This function first searches the lifter page to find their unique username,
+        then uses that to fetch their detailed competition history via the API.
+    """
+    from requests import get, RequestException
 
-    if match:
+    try:
+        # Search for lifter's username
+        url = f"http://openpowerlifting.org/lifters.html?q={lifter_name}"
+        response = get(url, timeout=10)
+        response.raise_for_status()
+
+        match = re.search(r'/api/liftercsv/([^"]+)', response.text)
+        if not match:
+            return f"Could not find lifter '{lifter_name}' on OpenPowerlifting.org"
+
+        # Fetch competition history
         username = match.group(1)
-        csv_response = get(f"http://openpowerlifting.org/api/liftercsv/{username}")
+        csv_url = f"http://openpowerlifting.org/api/liftercsv/{username}"
+        csv_response = get(csv_url, timeout=10)
+        csv_response.raise_for_status()
+        
         return csv_response.text
-    else:
-        return "There was an error searching openpowerlifting.org. Please try again."
+
+    except RequestException as e:
+        return f"Error accessing OpenPowerlifting.org: {str(e)}"
+    except Exception as e:
+        return f"Unexpected error while searching: {str(e)}"
 
 
 def main():
