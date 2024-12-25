@@ -133,7 +133,7 @@ class RulesSearch:
         for idx in top_k_idx:
             results.append({
                 'rule': self.rules_data[idx],
-                'score': float(combined_scores[idx])
+                'score': float(rrf_scores[idx])
             })
             
         return results
