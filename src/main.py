@@ -109,7 +109,7 @@ def main():
     rule = Agent(
         name="Rules Agent",
         instructions=RULES_INSTRUCTIONS,
-        functions=[redirect_to_router_agent]
+        functions=[redirect_to_router_agent, search_rules]
     )
 
     run_demo_loop(starting_agent=router, debug=True)
