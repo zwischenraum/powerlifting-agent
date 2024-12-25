@@ -8,7 +8,22 @@ from qdrant_client.http import models
 from qdrant_client.http.models import Distance, TextConfig, VectorParams
 
 class RulesSearch:
+    """A hybrid search engine for powerlifting rules combining BM25 and semantic search.
+    
+    This class implements a search system that combines lexical search using BM25
+    with semantic search using Qdrant vector database. Results are combined using
+    Reciprocal Rank Fusion (RRF) for optimal ranking.
+    """
+    
+    # Constant for RRF calculation (typical value is 60)
+    RRF_C = 60
+    
     def __init__(self, rules_file: str = "data/ipf_rules.json"):
+        """Initialize the search engine.
+        
+        Args:
+            rules_file: Path to the JSON file containing powerlifting rules
+        """
         self.rules_file = Path(rules_file)
         self.rules_data = self._load_rules()
         self.rules_text = [rule['text'] for rule in self.rules_data]
@@ -74,39 +89,45 @@ class RulesSearch:
                 points=points
             )
 
-    def search(self, query: str, k: int = 3, alpha: float = 0.5) -> List[Dict]:
-        """
-        Perform hybrid search using both BM25 and semantic search with Qdrant.
+    def search(self, query: str, k: int = 3) -> List[Dict]:
+        """Perform hybrid search using both BM25 and semantic search with Qdrant.
+        
+        This method combines BM25 and semantic search results using Reciprocal Rank 
+        Fusion (RRF). RRF is a robust method for combining multiple ranked lists 
+        without requiring score normalization.
         
         Args:
-            query: Search query
-            k: Number of results to return
-            alpha: Weight for combining scores (0.5 means equal weight)
+            query: Search query string
+            k: Number of top results to return
             
         Returns:
-            List of top k matching rules with scores
+            List of dictionaries containing top k matching rules with scores
         """
-        # BM25 scoring
+        # Get BM25 rankings
         bm25_scores = self.bm25.get_scores(query.split())
-        bm25_scores = (bm25_scores - np.min(bm25_scores)) / (np.max(bm25_scores) - np.min(bm25_scores))
+        bm25_ranks = (-bm25_scores).argsort()
         
+        # Get semantic search rankings
         semantic_results = self.qdrant.search(
             collection_name='rules',
-            query_vector=query_vector,
-            limit=len(self.rules_text),  # Get all scores for hybrid ranking
+            query_text=query,  # Using text search instead of vector
+            limit=len(self.rules_text),
             query_filter=None
         )
         
-        # Create semantic scores array
-        semantic_scores = np.zeros(len(self.rules_text))
-        for hit in semantic_results:
-            semantic_scores[hit.id] = hit.score
-        
-        # Combine scores
-        combined_scores = alpha * semantic_scores + (1 - alpha) * bm25_scores
+        # Convert semantic results to ranks
+        semantic_ranks = np.zeros(len(self.rules_text), dtype=int)
+        for rank, hit in enumerate(semantic_results):
+            semantic_ranks[hit.id] = rank
+            
+        # Calculate RRF scores
+        rrf_scores = np.zeros(len(self.rules_text))
+        for idx in range(len(self.rules_text)):
+            rrf_scores[idx] = (1 / (self.RRF_C + bm25_ranks[idx])) + \
+                             (1 / (self.RRF_C + semantic_ranks[idx]))
         
         # Get top k results
-        top_k_idx = np.argsort(combined_scores)[-k:][::-1]
+        top_k_idx = np.argsort(rrf_scores)[-k:][::-1]
         
         results = []
         for idx in top_k_idx:
