@@ -1,5 +1,4 @@
 from typing import List, Dict
-import json
 from pathlib import Path
 import numpy as np
 from rank_bm25 import BM25Okapi
@@ -19,18 +18,17 @@ class RulesSearch:
     # Constant for RRF calculation (typical value is 60)
     RRF_C = 60
     
-    def __init__(self, rules_file: str = "data/ipf_rules.json", openai_client: OpenAI = None):
+    def __init__(self, rules_file: str = "data/rulebook.txt", openai_client: OpenAI = None):
         """Initialize the search engine.
         
         Args:
-            rules_file: Path to the JSON file containing powerlifting rules
+            rules_file: Path to the text file containing powerlifting rules
         """
         self.rules_file = Path(rules_file)
-        self.rules_data = self._load_rules()
-        self.rules_text = [rule['text'] for rule in self.rules_data]
+        self.rules_chunks = self._load_and_chunk_rules()
         
         # Create BM25 index
-        tokenized_rules = [text.split() for text in self.rules_text]
+        tokenized_rules = [text.split() for text in self.rules_chunks]
         self.bm25 = BM25Okapi(tokenized_rules)
         
         # Initialize clients
@@ -43,12 +41,48 @@ class RulesSearch:
         # Upload texts if collection is empty
         self._upload_texts()
 
-    def _load_rules(self) -> List[Dict]:
-        """Load rules from JSON file."""
+    def _load_and_chunk_rules(self) -> List[str]:
+        """Load rules from text file and split into semantic chunks."""
         if not self.rules_file.exists():
             raise FileNotFoundError(f"Rules file not found: {self.rules_file}")
+            
         with open(self.rules_file) as f:
-            return json.load(f)
+            text = f.read()
+            
+        # Split into paragraphs first
+        paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
+        
+        # Combine short paragraphs and split long ones to get reasonable chunk sizes
+        chunks = []
+        current_chunk = []
+        current_length = 0
+        
+        for para in paragraphs:
+            para_words = len(para.split())
+            
+            # If paragraph is very long, split it into sentences
+            if para_words > 100:
+                sentences = [s.strip() for s in para.split('.') if s.strip()]
+                for sentence in sentences:
+                    if current_length + len(sentence.split()) > 100:
+                        if current_chunk:
+                            chunks.append(' '.join(current_chunk))
+                            current_chunk = []
+                            current_length = 0
+                    current_chunk.append(sentence)
+                    current_length += len(sentence.split())
+            else:
+                if current_length + para_words > 100:
+                    chunks.append(' '.join(current_chunk))
+                    current_chunk = []
+                    current_length = 0
+                current_chunk.append(para)
+                current_length += para_words
+                
+        if current_chunk:
+            chunks.append(' '.join(current_chunk))
+            
+        return chunks
 
     def _init_collection(self):
         """Initialize Qdrant collection with text indexing"""
@@ -75,13 +109,13 @@ class RulesSearch:
         """Upload texts with embeddings to Qdrant if collection is empty"""
         if self.qdrant.get_collection('rules').vectors_count == 0:
             points = []
-            for i, rule in enumerate(self.rules_data):
-                vector = self._get_embedding(rule['text'])
+            for i, chunk in enumerate(self.rules_chunks):
+                vector = self._get_embedding(chunk)
                 points.append(models.PointStruct(
                     id=i,
                     vector=vector,
                     payload={
-                        'text': rule['text'],
+                        'text': chunk,
                     }
                 ))
             
@@ -113,17 +147,17 @@ class RulesSearch:
         semantic_results = self.qdrant.search(
             collection_name='rules',
             query_vector=query_vector,
-            limit=len(self.rules_text)
+            limit=len(self.rules_chunks)
         )
         
         # Convert semantic results to ranks
-        semantic_ranks = np.zeros(len(self.rules_text), dtype=int)
+        semantic_ranks = np.zeros(len(self.rules_chunks), dtype=int)
         for rank, hit in enumerate(semantic_results):
             semantic_ranks[hit.id] = rank
             
         # Calculate RRF scores
-        rrf_scores = np.zeros(len(self.rules_text))
-        for idx in range(len(self.rules_text)):
+        rrf_scores = np.zeros(len(self.rules_chunks))
+        for idx in range(len(self.rules_chunks)):
             rrf_scores[idx] = (1 / (self.RRF_C + bm25_ranks[idx])) + \
                              (1 / (self.RRF_C + semantic_ranks[idx]))
         
@@ -133,7 +167,7 @@ class RulesSearch:
         results = []
         for idx in top_k_idx:
             results.append({
-                'rule': self.rules_data[idx],
+                'text': self.rules_chunks[idx],
                 'score': float(rrf_scores[idx])
             })
             
@@ -148,7 +182,7 @@ def search_rules(query: str, openai_client: OpenAI = None) -> str:
         # Format results as a readable string
         output = "Here are the most relevant rules:\n\n"
         for i, result in enumerate(results, 1):
-            output += f"{i}. {result['rule']['text']}\n"
+            output += f"{i}. {result['text']}\n"
             output += f"   (Score: {result['score']:.3f})\n\n"
         
         return output
