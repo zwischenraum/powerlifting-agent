@@ -103,7 +103,7 @@ def main():
     chat = Agent(
         name="Chat Agent",
         instructions=CHAT_INSTRUCTIONS,
-        functions=[redirect_to_router_agent, search_rules]
+        functions=[redirect_to_router_agent]
     )
 
     rule = Agent(
