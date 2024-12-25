@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "powerlifting-agent"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+swarm = {git = "ssh://git@github.com/openai/swarm.git"}
+aider = "^0.2.6"
+sentence-transformers = "^3.3.1"
+rank-bm25 = "^0.2.2"
+scikit-learn = "^1.6.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
