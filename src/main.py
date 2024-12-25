@@ -20,7 +20,9 @@ If a user just wants to chat about powerlifting, please redirect him to the chat
 
 If a user wants to know more about a particular powerlifting rule, please redirect him to the rule agent."""
 
-SEARCH_INSTRUCTIONS = """You are a helpful search agent, that helps lifters search openpowerlifting.org. If a user wants to know any (historical) records of a lifter, please search on openpowerlifting.org."""
+SEARCH_INSTRUCTIONS = """You are a helpful search agent, that helps lifters search openpowerlifting.org. If a user wants to know any (historical) records of a lifter, please search on openpowerlifting.org.
+
+Always ask for and use the lifter's full, official name as it appears on openpowerlifting.org. Common nicknames or shortened names won't work (e.g., searching for 'Mike Tuchscherer' won't find results for 'Michael Tuchscherer')."""
 
 RULES_INSTRUCTIONS = """You are a helpful agent that assists with powerlifting rule questions.
 You can search the IPF rulebook to find relevant rules and explain them in a clear way.
