@@ -63,9 +63,9 @@ class RulesSearch:
             for i, rule in enumerate(self.rules_data):
                 points.append(models.PointStruct(
                     id=i,
+                    vector=rule,
                     payload={
                         'text': rule['text'],
-                        '@text': rule['text']  # Special field for text indexing
                     }
                 ))
             
@@ -90,10 +90,9 @@ class RulesSearch:
         bm25_scores = self.bm25.get_scores(query.split())
         bm25_scores = (bm25_scores - np.min(bm25_scores)) / (np.max(bm25_scores) - np.min(bm25_scores))
         
-        # Semantic search scoring using Qdrant's text encoder
         semantic_results = self.qdrant.search(
             collection_name='rules',
-            query_text=query,
+            query_vector=query_vector,
             limit=len(self.rules_text),  # Get all scores for hybrid ranking
             query_filter=None
         )
