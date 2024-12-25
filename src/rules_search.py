@@ -90,7 +90,7 @@ class RulesSearch:
         try:
             # Try to get the collection
             collection_info = self.qdrant.get_collection(collection_name)
-            print(f"Collection exists with {collection_info.vectors_count} vectors")
+            print(f"Collection exists with {collection_info.points_count} vectors")
         except Exception as e:
             print(f"Creating new collection: {collection_name}")
             self.qdrant.recreate_collection(
@@ -100,6 +100,9 @@ class RulesSearch:
                     distance=Distance.COSINE
                 )
             )
+            # Get updated collection info
+            collection_info = self.qdrant.get_collection(collection_name)
+            print(f"Created new collection with {collection_info.points_count} vectors")
     
     def _get_embedding(self, text: str) -> List[float]:
         """Get embedding for text using OpenAI API."""
@@ -113,7 +116,7 @@ class RulesSearch:
         """Upload texts with embeddings to Qdrant if collection is empty"""
         collection_info = self.qdrant.get_collection('rules')
         
-        if collection_info.vectors_count == 0:
+        if collection_info.points_count == 0:
             print(f"Uploading {len(self.rules_chunks)} text chunks to Qdrant...")
             # Process in batches of 100
             batch_size = 100
