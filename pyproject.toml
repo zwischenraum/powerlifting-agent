@@ -8,8 +8,8 @@ packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-swarm = {git = "ssh://git@github.com/openai/swarm.git"}
-aider = "^0.2.6"
+swarm = {git = "https://github.com/openai/swarm.git"}
+python-dotenv = "^1.0.0"
 rank-bm25 = "^0.2.2"
 scikit-learn = "^1.6.0"
 qdrant-client = "^1.7.0"
