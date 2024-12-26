@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from openai import OpenAI
 from os import getenv
 from swarm import Agent, Swarm
-from main import setup_agents
+from agent_setup import setup_agents
 from dotenv import load_dotenv
 import logging
 
