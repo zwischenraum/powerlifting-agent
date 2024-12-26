@@ -36,7 +36,7 @@ if prompt := st.chat_input("Ask your question..."):
     with st.spinner('Thinking...'):
         try:
             # Send request to API
-            response = requests.post("http://localhost:8000/chat", json=request_data, timeout=30)
+            response = requests.post("http://server:8000/chat", json=request_data, timeout=30)
             response.raise_for_status()
 
             # Get the assistant's response
