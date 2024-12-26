@@ -43,7 +43,7 @@ if prompt := st.chat_input("Ask your question..."):
             assistant_response = response.json()
             if not assistant_response or "messages" not in assistant_response:
                 st.error("Received invalid response from server")
-                return
+                continue
 
             last_message = assistant_response["messages"][-1]
 
