@@ -114,7 +114,7 @@ if __name__ == '__main__':
     # Initialize logging
     logging.debug("Starting powerlifting agent application")
     
-    starting_agent = setup_agents()
+    router = setup_agents()
 
     openai_client = OpenAI(api_key=getenv('OPENAI_API_KEY'), base_url=getenv('OPENAI_BASE_URL'))
     swarm = Swarm(openai_client)
