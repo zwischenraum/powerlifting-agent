@@ -1,6 +1,5 @@
 import re
 from os import getenv
-import logging
 from openai import OpenAI
 from logger import setup_logger
 from swarm import Swarm, Agent
@@ -77,7 +76,7 @@ def main():
     logger.debug("Starting powerlifting agent application")
     
     openai_client = OpenAI(api_key=getenv('OPENAI_API_KEY'), base_url=getenv('OPENAI_BASE_URL'))
-    client = Swarm(openai_client)
+    swarm = Swarm(openai_client)
 
     def redirect_to_router_agent():
         """Call this function if a user is asking about a topic that is not handled by the current agent."""
@@ -117,7 +116,9 @@ def main():
         functions=[redirect_to_router_agent, search_rules]
     )
 
-    run_demo_loop(starting_agent=router, debug=True)
+    response = swarm.run(agent=router, messages=[{'role':'user', 'content':'What is a valid bench?'}])
+    print(response)
+    # run_demo_loop(starting_agent=router, debug=True)
 
 
 if __name__ == '__main__':
