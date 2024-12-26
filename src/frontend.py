@@ -4,17 +4,10 @@ import requests
 # Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "current_agent" not in st.session_state:
+    st.session_state.current_agent = "router"
 
 st.title("Powerlifting Assistant")
-
-# Sidebar for agent selection
-agent_options = {
-    "Router Agent": "router",
-    "Search Agent": "search",
-    "Chat Agent": "chat",
-    "Rules Agent": "rules",
-}
-selected_agent = st.sidebar.selectbox("Select Agent", list(agent_options.keys()))
 
 # Display chat messages
 for message in st.session_state.messages:
@@ -32,7 +25,7 @@ if prompt := st.chat_input("Ask your question..."):
 
     # Prepare the request
     request_data = {
-        "agent_name": agent_options[selected_agent],
+        "agent_name": st.session_state.current_agent,
         "messages": [
             {"role": m["role"], "content": m["content"]}
             for m in st.session_state.messages
@@ -49,6 +42,9 @@ if prompt := st.chat_input("Ask your question..."):
         if assistant_response and "messages" in assistant_response:
             last_message = assistant_response["messages"][-1]
 
+            # Update current agent from response
+            st.session_state.current_agent = assistant_response["agent_name"]
+            
             # Add assistant message to chat history
             st.session_state.messages.append(
                 {"role": "assistant", "content": last_message["content"]}
@@ -57,5 +53,8 @@ if prompt := st.chat_input("Ask your question..."):
             # Display assistant message
             with st.chat_message("assistant"):
                 st.write(last_message["content"])
+                
+            # Display current agent (for debugging)
+            st.sidebar.text(f"Current Agent: {st.session_state.current_agent}")
     except Exception as e:
         st.error(f"Error communicating with the API: {str(e)}")
