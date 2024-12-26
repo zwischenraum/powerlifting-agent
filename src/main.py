@@ -1,12 +1,11 @@
 import re
 from os import getenv
 from openai import OpenAI
-from logger import setup_logger
+import logging
 from swarm import Swarm, Agent
 from rules_search import search_rules
 
 from dotenv import load_dotenv
-from swarm.repl import run_demo_loop
 
 load_dotenv()
 
@@ -70,14 +69,7 @@ def search_openpowerlifting(lifter_name: str) -> str:
         return f"Unexpected error while searching: {str(e)}"
 
 
-def main():
-    # Initialize logging
-    logger = setup_logger()
-    logger.debug("Starting powerlifting agent application")
-    
-    openai_client = OpenAI(api_key=getenv('OPENAI_API_KEY'), base_url=getenv('OPENAI_BASE_URL'))
-    swarm = Swarm(openai_client)
-
+def setup_agents() -> Agent:
     def redirect_to_router_agent():
         """Call this function if a user is asking about a topic that is not handled by the current agent."""
         return router
@@ -93,7 +85,6 @@ def main():
 
     router = Agent(
         name="Router Agent",
-        # model="llama-3.1-405b-fp8",
         instructions=ROUTER_INSTRUCTIONS,
         functions=[redirect_to_search_agent, redirect_to_chat_agent, redirect_to_rule_agent]
     )
@@ -116,10 +107,15 @@ def main():
         functions=[redirect_to_router_agent, search_rules]
     )
 
-    response = swarm.run(agent=router, messages=[{'role':'user', 'content':'What is a valid bench?'}])
-    print(response)
-    # run_demo_loop(starting_agent=router, debug=True)
+    return router
 
 
 if __name__ == '__main__':
-    main()
+    # Initialize logging
+    logging.debug("Starting powerlifting agent application")
+    
+    starting_agent = setup_agents()
+
+    openai_client = OpenAI(api_key=getenv('OPENAI_API_KEY'), base_url=getenv('OPENAI_BASE_URL'))
+    swarm = Swarm(openai_client)
+    response = swarm.run(agent=router, messages=[{'role':'user', 'content':'What is a valid bench?'}])
