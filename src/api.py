@@ -40,6 +40,8 @@ async def chat(request: ChatRequest):
 
         # Get response from swarm
         response = swarm.run(agent=agents[request.agent_name], messages=request.messages)
+        print(response.agent)
+        print(response.messages)
 
         return ChatRequest(agent_name=response.agent.name, messages=response.messages)
     except Exception as e:
