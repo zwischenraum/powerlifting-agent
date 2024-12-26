@@ -1,29 +1,26 @@
 import re
-from os import getenv
-from openai import OpenAI
-import logging
-from swarm import Swarm, Agent
-from rules_search import search_rules
 
+import uvicorn
 from dotenv import load_dotenv
+from swarm import Agent
+
+from api import app
+from rules_search import search_rules
 
 load_dotenv()
 
-CHAT_INSTRUCTIONS = "You are a helpful agent that gives friendly and helpful answers to a fellow powerlifter."
+CHAT_INSTRUCTIONS = "You are the chat agent - a helpful agent that gives friendly and helpful answers to a fellow powerlifter."
 
-ROUTER_INSTRUCTIONS = """You are a helpful agent that distributes user requests to the appropriate agent.
-
+ROUTER_INSTRUCTIONS = """You are the router agent - a helpful agent that distributes user requests to the appropriate agent.
 If a user wants to search openpowerlifting.org, or wants to know any historical records please redirect them to the search agent.
-
 If a user just wants to chat about powerlifting, please redirect him to the chat agent.
-
 If a user wants to know more about a particular powerlifting rule, please redirect him to the rule agent."""
 
-SEARCH_INSTRUCTIONS = """You are a helpful search agent, that helps lifters search openpowerlifting.org. If a user wants to know any (historical) records of a lifter, please search on openpowerlifting.org.
+SEARCH_INSTRUCTIONS = """You are the search agent - a helpful agent, that helps lifters search openpowerlifting.org. If a user wants to know any (historical) records of a lifter, please search on openpowerlifting.org.
 
 Always ask for and use the lifter's full, official name as it appears on openpowerlifting.org. Common nicknames or shortened names won't work (e.g., searching for 'Mike Tuchscherer' won't find results for 'Michael Tuchscherer')."""
 
-RULES_INSTRUCTIONS = """You are a helpful agent that assists with powerlifting rule questions.
+RULES_INSTRUCTIONS = """You are the rule agent - a helpful agent that assists with powerlifting rule questions.
 You can search the IPF rulebook to find relevant rules and explain them in a clear way.
 Always use the search_rules function to find relevant rules before answering questions."""
 
@@ -43,7 +40,7 @@ def search_openpowerlifting(lifter_name: str) -> str:
         This function first searches the lifter page to find their unique username,
         then uses that to fetch their detailed competition history via the API.
     """
-    from requests import get, RequestException
+    from requests import RequestException, get
 
     try:
         # Search for lifter's username
@@ -60,7 +57,7 @@ def search_openpowerlifting(lifter_name: str) -> str:
         csv_url = f"http://openpowerlifting.org/api/liftercsv/{username}"
         csv_response = get(csv_url, timeout=10)
         csv_response.raise_for_status()
-        
+
         return csv_response.text
 
     except RequestException as e:
@@ -69,7 +66,7 @@ def search_openpowerlifting(lifter_name: str) -> str:
         return f"Unexpected error while searching: {str(e)}"
 
 
-def setup_agents() -> Agent:
+def setup_agents() -> dict[str, Agent]:
     def redirect_to_router_agent():
         """Call this function if a user is asking about a topic that is not handled by the current agent."""
         return router
@@ -80,38 +77,39 @@ def setup_agents() -> Agent:
     def redirect_to_chat_agent():
         return chat
 
-    def redirect_to_rule_agent():
-        return rule
+    def redirect_to_rules_agent():
+        return rules
 
     router = Agent(
-        name="Router Agent",
+        name="router",
         instructions=ROUTER_INSTRUCTIONS,
-        functions=[redirect_to_search_agent, redirect_to_chat_agent, redirect_to_rule_agent]
+        functions=[
+            redirect_to_search_agent,
+            redirect_to_chat_agent,
+            redirect_to_rules_agent,
+        ],
     )
 
     search = Agent(
-        name="Search Agent",
+        name="search",
         instructions=SEARCH_INSTRUCTIONS,
-        functions=[redirect_to_router_agent, search_openpowerlifting]
+        functions=[redirect_to_router_agent, search_openpowerlifting],
     )
 
     chat = Agent(
-        name="Chat Agent",
+        name="chat",
         instructions=CHAT_INSTRUCTIONS,
-        functions=[redirect_to_router_agent]
+        functions=[redirect_to_router_agent],
     )
 
-    rule = Agent(
-        name="Rules Agent",
+    rules = Agent(
+        name="rules",
         instructions=RULES_INSTRUCTIONS,
-        functions=[redirect_to_router_agent, search_rules]
+        functions=[redirect_to_router_agent, search_rules],
     )
 
-    return router
+    return {"router": router, "search": search, "chat": chat, "rules": rules}
 
 
-if __name__ == '__main__':
-    from api import app
-    import uvicorn
-    
+if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
