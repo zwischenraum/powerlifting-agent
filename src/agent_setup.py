@@ -1,4 +1,5 @@
 from swarm import Agent
+from rules_search import search_rules
 
 CHAT_INSTRUCTIONS = "You are the chat agent - a helpful agent that gives friendly and helpful answers to a fellow powerlifter."
 
