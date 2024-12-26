@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from openai import OpenAI
 from os import getenv
-from swarm import Agent, Swarm
+from swarm import Swarm
 from agent_setup import setup_agents
 from dotenv import load_dotenv
 import logging
@@ -22,11 +22,11 @@ openai_client = OpenAI(
     api_key=getenv("OPENAI_API_KEY"), base_url=getenv("OPENAI_BASE_URL")
 )
 swarm = Swarm(openai_client)
-router = setup_agents()
+agents = setup_agents()
 
 
 class ChatRequest(BaseModel):
-    agent: Agent
+    agent_name: str
     messages: list
 
 
@@ -39,9 +39,9 @@ async def chat(request: ChatRequest):
         logging.debug(f"Received chat request with {len(request.messages)} messages")
 
         # Get response from swarm
-        response = swarm.run(agent=request.agent, messages=request.messages)
+        response = swarm.run(agent=agents[request.agent_name], messages=request.messages)
 
-        return ChatRequest(agent=response.agent, messages=response.messages)
+        return ChatRequest(agent=response.agent.name, messages=response.messages)
     except Exception as e:
         logging.error(f"Error processing chat request: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
