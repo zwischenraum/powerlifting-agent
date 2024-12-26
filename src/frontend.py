@@ -32,14 +32,19 @@ if prompt := st.chat_input("Ask your question..."):
         ],
     }
 
-    # Send request to API
-    try:
-        response = requests.post("http://localhost:8000/chat", json=request_data)
-        response.raise_for_status()
+    # Show thinking indicator
+    with st.spinner('Thinking...'):
+        try:
+            # Send request to API
+            response = requests.post("http://localhost:8000/chat", json=request_data, timeout=30)
+            response.raise_for_status()
 
-        # Get the assistant's response
-        assistant_response = response.json()
-        if assistant_response and "messages" in assistant_response:
+            # Get the assistant's response
+            assistant_response = response.json()
+            if not assistant_response or "messages" not in assistant_response:
+                st.error("Received invalid response from server")
+                return
+
             last_message = assistant_response["messages"][-1]
 
             # Update current agent from response
@@ -53,5 +58,10 @@ if prompt := st.chat_input("Ask your question..."):
             # Display assistant message with agent info
             with st.chat_message("assistant"):
                 st.write(f"[{st.session_state.current_agent.capitalize()} Agent] {last_message['content']}")
-    except Exception as e:
-        st.error(f"Error communicating with the API: {str(e)}")
+
+        except requests.exceptions.Timeout:
+            st.error("Request timed out. Please try again.")
+        except requests.exceptions.ConnectionError:
+            st.error("Could not connect to the server. Please check if the API is running.")
+        except Exception as e:
+            st.error(f"Error: {str(e)}")

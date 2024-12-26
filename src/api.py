@@ -36,17 +36,28 @@ async def chat(request: ChatRequest):
     Chat endpoint that processes messages and returns responses from the appropriate agent.
     """
     try:
-        logging.debug(f"Received chat request with {len(request.messages)} messages")
+        logging.info(f"Received chat request for agent '{request.agent_name}' with {len(request.messages)} messages")
+
+        if request.agent_name not in agents:
+            raise HTTPException(status_code=400, detail=f"Unknown agent: {request.agent_name}")
+
+        if not request.messages:
+            raise HTTPException(status_code=400, detail="No messages provided")
 
         # Get response from swarm
         response = swarm.run(agent=agents[request.agent_name], messages=request.messages)
-        print(response.agent)
-        print(response.messages)
+        logging.info(f"Agent '{response.agent.name}' generated response")
 
         return ChatRequest(agent_name=response.agent.name, messages=response.messages)
+
+    except HTTPException:
+        raise
+    except KeyError as e:
+        logging.error(f"Invalid agent or configuration error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
     except Exception as e:
-        logging.error(f"Error processing chat request: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error(f"Error processing chat request: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/health")
