@@ -195,7 +195,7 @@ class RulesSearch:
         for idx in top_k_idx:
             # Get individual scores
             bm25_score = bm25_scores[idx]
-            semantic_score = semantic_results[semantic_ranks[idx]]
+            semantic_score = semantic_results[semantic_ranks[idx]].score  # Extract the score from ScoredPoint
             rrf_score = rrf_scores[idx]
             
             results.append({
