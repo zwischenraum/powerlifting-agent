@@ -194,9 +194,9 @@ class RulesSearch:
         results = []
         for idx in top_k_idx:
             # Get individual scores
-            bm25_score = float(bm25_scores[idx])
-            semantic_score = 1.0 - float(semantic_ranks[idx] / len(self.rules_chunks))  # Convert rank to similarity
-            rrf_score = float(rrf_scores[idx])
+            bm25_score = bm25_scores[idx]
+            semantic_score = semantic_results[semantic_ranks[idx]]
+            rrf_score = rrf_scores[idx]
             
             results.append({
                 'text': self.rules_chunks[idx],
