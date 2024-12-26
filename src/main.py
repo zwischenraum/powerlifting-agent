@@ -111,11 +111,7 @@ def setup_agents() -> Agent:
 
 
 if __name__ == '__main__':
-    # Initialize logging
-    logging.debug("Starting powerlifting agent application")
+    from api import app
+    import uvicorn
     
-    router = setup_agents()
-
-    openai_client = OpenAI(api_key=getenv('OPENAI_API_KEY'), base_url=getenv('OPENAI_BASE_URL'))
-    swarm = Swarm(openai_client)
-    response = swarm.run(agent=router, messages=[{'role':'user', 'content':'What is a valid bench?'}])
+    uvicorn.run(app, host="0.0.0.0", port=8000)
