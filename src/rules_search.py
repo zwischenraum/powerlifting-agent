@@ -22,13 +22,19 @@ class RulesSearch:
     RRF_C = 60
 
     def __init__(
-        self, rules_file: str = "data/rulebook.txt", openai_client: OpenAI = None
+        self, 
+        rules_file: str = "data/rulebook.txt", 
+        openai_client: OpenAI = None,
+        embedding_model: str = "text-embedding-3-small"
     ):
         """Initialize the search engine.
 
         Args:
             rules_file: Path to the text file containing powerlifting rules
+            openai_client: OpenAI client instance
+            embedding_model: Name of the OpenAI embedding model to use
         """
+        self.embedding_model = embedding_model
         self.rules_file = Path(rules_file)
         self.rules_chunks = self._load_and_chunk_rules()
 
@@ -116,7 +122,7 @@ class RulesSearch:
     def _get_embedding(self, text: str) -> List[float]:
         """Get embedding for text using OpenAI API."""
         response = self.openai.embeddings.create(
-            model="text-embedding-3-small", input=text
+            model=self.embedding_model, input=text
         )
         return response.data[0].embedding
 
@@ -131,7 +137,7 @@ class RulesSearch:
 
             # Get embeddings for all chunks at once
             response = self.openai.embeddings.create(
-                model="text-embedding-ada-002", input=self.rules_chunks
+                model=self.embedding_model, input=self.rules_chunks
             )
             embeddings = [item.embedding for item in response.data]
 
