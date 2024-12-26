@@ -50,11 +50,8 @@ if prompt := st.chat_input("Ask your question..."):
                 {"role": "assistant", "content": last_message["content"]}
             )
 
-            # Display assistant message
+            # Display assistant message with agent info
             with st.chat_message("assistant"):
-                st.write(last_message["content"])
-                
-            # Display current agent (for debugging)
-            st.sidebar.text(f"Current Agent: {st.session_state.current_agent}")
+                st.write(f"[{st.session_state.current_agent.capitalize()} Agent] {last_message['content']}")
     except Exception as e:
         st.error(f"Error communicating with the API: {str(e)}")
