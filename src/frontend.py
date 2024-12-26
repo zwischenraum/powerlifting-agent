@@ -11,10 +11,10 @@ st.title("Powerlifting Assistant")
 
 # Sidebar for agent selection
 agent_options = {
-    "Router Agent": Agent.ROUTER,
-    "Search Agent": Agent.SEARCH,
-    "Chat Agent": Agent.CHAT,
-    "Rules Agent": Agent.RULES
+    "Router Agent": "router",
+    "Search Agent": "search", 
+    "Chat Agent": "chat",
+    "Rules Agent": "rules"
 }
 selected_agent = st.sidebar.selectbox(
     "Select Agent",
