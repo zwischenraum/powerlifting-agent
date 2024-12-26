@@ -1,10 +1,8 @@
 import streamlit as st
 import requests
-from swarm import Agent
-from typing import List, Dict
 
 # Initialize session state
-if 'messages' not in st.session_state:
+if "messages" not in st.session_state:
     st.session_state.messages = []
 
 st.title("Powerlifting Assistant")
@@ -12,14 +10,11 @@ st.title("Powerlifting Assistant")
 # Sidebar for agent selection
 agent_options = {
     "Router Agent": "router",
-    "Search Agent": "search", 
+    "Search Agent": "search",
     "Chat Agent": "chat",
-    "Rules Agent": "rules"
+    "Rules Agent": "rules",
 }
-selected_agent = st.sidebar.selectbox(
-    "Select Agent",
-    list(agent_options.keys())
-)
+selected_agent = st.sidebar.selectbox("Select Agent", list(agent_options.keys()))
 
 # Display chat messages
 for message in st.session_state.messages:
@@ -30,39 +25,35 @@ for message in st.session_state.messages:
 if prompt := st.chat_input("Ask your question..."):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
+
     # Display user message
     with st.chat_message("user"):
         st.write(prompt)
 
     # Prepare the request
     request_data = {
-        "agent": agent_options[selected_agent],
+        "agent_name": agent_options[selected_agent],
         "messages": [
-            {"role": m["role"], "content": m["content"]} 
+            {"role": m["role"], "content": m["content"]}
             for m in st.session_state.messages
-        ]
+        ],
     }
 
     # Send request to API
     try:
-        response = requests.post(
-            "http://localhost:8000/chat",
-            json=request_data
-        )
+        response = requests.post("http://localhost:8000/chat", json=request_data)
         response.raise_for_status()
-        
+
         # Get the assistant's response
         assistant_response = response.json()
         if assistant_response and "messages" in assistant_response:
             last_message = assistant_response["messages"][-1]
-            
+
             # Add assistant message to chat history
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": last_message["content"]
-            })
-            
+            st.session_state.messages.append(
+                {"role": "assistant", "content": last_message["content"]}
+            )
+
             # Display assistant message
             with st.chat_message("assistant"):
                 st.write(last_message["content"])
