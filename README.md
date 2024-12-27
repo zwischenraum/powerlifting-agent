@@ -74,6 +74,14 @@ poetry add package-name
 - `Dockerfile.frontend`: Frontend service configuration
 - `docker-compose.yml`: Multi-container orchestration
 
+## Todo:
+
+- [ ] Add VLM to upload pictures for form checks (easy/medium)
+- [ ] Add video support for form checks (difficult)
+- [ ] Add a programming agent that helps you design and improve
+  your training programm
+- [ ] Add a CI pipeline
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
