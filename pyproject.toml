@@ -20,6 +20,23 @@ pydantic = "^2.5.3"
 streamlit = "^1.29.0"
 requests = "^2.31.0"
 
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.6.0"
+ruff = "^0.1.9"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+]
 
 [build-system]
 requires = ["poetry-core"]
