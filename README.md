@@ -27,7 +27,7 @@ An AI-powered assistant for powerlifters that helps with rule interpretations, r
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/zwischenraum/powerlifting-agent.git
 cd powerlifting-agent
 ```
 
