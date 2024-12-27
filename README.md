@@ -76,8 +76,13 @@ poetry add package-name
 
 ## License
 
-[Add your license information here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
-[Add contribution guidelines here]
+Contributions are welcome! Simply open a pull request with your proposed changes.
+
+Please ensure your PR:
+- Follows existing code style and conventions
+- Includes tests if adding new functionality
+- Updates documentation as needed
