@@ -1,5 +1,5 @@
-import streamlit as st
 import requests
+import streamlit as st
 
 # Initialize session state
 if "messages" not in st.session_state:
@@ -33,10 +33,12 @@ if prompt := st.chat_input("Ask your question..."):
     }
 
     # Show thinking indicator
-    with st.spinner('Thinking...'):
+    with st.spinner("Thinking..."):
         try:
             # Send request to API
-            response = requests.post("http://server:8000/chat", json=request_data, timeout=30)
+            response = requests.post(
+                "http://server:8000/chat", json=request_data, timeout=30
+            )
             response.raise_for_status()
 
             # Get the assistant's response
@@ -48,7 +50,7 @@ if prompt := st.chat_input("Ask your question..."):
 
             # Update current agent from response
             st.session_state.current_agent = assistant_response["agent_name"]
-            
+
             # Add assistant message to chat history
             st.session_state.messages.append(
                 {"role": "assistant", "content": last_message["content"]}
@@ -56,11 +58,15 @@ if prompt := st.chat_input("Ask your question..."):
 
             # Display assistant message with agent info
             with st.chat_message("assistant"):
-                st.write(f"[{st.session_state.current_agent.capitalize()} Agent] {last_message['content']}")
+                st.write(
+                    f"[{st.session_state.current_agent.capitalize()} Agent] {last_message['content']}"
+                )
 
         except requests.exceptions.Timeout:
             st.error("Request timed out. Please try again.")
         except requests.exceptions.ConnectionError:
-            st.error("Could not connect to the server. Please check if the API is running.")
+            st.error(
+                "Could not connect to the server. Please check if the API is running."
+            )
         except Exception as e:
             st.error(f"Error: {str(e)}")

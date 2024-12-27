@@ -1,11 +1,12 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from openai import OpenAI
+import logging
 from os import getenv
-from swarm import Swarm
+
 from agent_setup import setup_agents
 from dotenv import load_dotenv
-import logging
+from fastapi import FastAPI, HTTPException
+from openai import OpenAI
+from pydantic import BaseModel
+from swarm import Swarm
 
 # Load environment variables
 load_dotenv()
@@ -36,16 +37,22 @@ async def chat(request: ChatRequest):
     Chat endpoint that processes messages and returns responses from the appropriate agent.
     """
     try:
-        logging.info(f"Received chat request for agent '{request.agent_name}' with {len(request.messages)} messages")
+        logging.info(
+            f"Received chat request for agent '{request.agent_name}' with {len(request.messages)} messages"
+        )
 
         if request.agent_name not in agents:
-            raise HTTPException(status_code=400, detail=f"Unknown agent: {request.agent_name}")
+            raise HTTPException(
+                status_code=400, detail=f"Unknown agent: {request.agent_name}"
+            )
 
         if not request.messages:
             raise HTTPException(status_code=400, detail="No messages provided")
 
         # Get response from swarm
-        response = swarm.run(agent=agents[request.agent_name], messages=request.messages)
+        response = swarm.run(
+            agent=agents[request.agent_name], messages=request.messages
+        )
         logging.info(f"Agent '{response.agent.name}' generated response")
 
         return ChatRequest(agent_name=response.agent.name, messages=response.messages)

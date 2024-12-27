@@ -1,5 +1,5 @@
-from swarm import Agent
 from rules_search import search_rules
+from swarm import Agent
 
 CHAT_INSTRUCTIONS = "You are the chat agent - a helpful agent that gives friendly and helpful answers to a fellow powerlifter."
 
@@ -16,10 +16,12 @@ RULES_INSTRUCTIONS = """You are the rule agent - a helpful agent that assists wi
 You can search the IPF rulebook to find relevant rules and explain them in a clear way.
 Always use the search_rules function to find relevant rules before answering questions."""
 
+
 def search_openpowerlifting(lifter_name: str) -> str:
     """Search openpowerlifting.org for a lifter's competition history."""
-    from requests import RequestException, get
     import re
+
+    from requests import RequestException, get
 
     try:
         # Search for lifter's username
@@ -43,6 +45,7 @@ def search_openpowerlifting(lifter_name: str) -> str:
         return f"Error accessing OpenPowerlifting.org: {str(e)}"
     except Exception as e:
         return f"Unexpected error while searching: {str(e)}"
+
 
 def setup_agents() -> dict[str, Agent]:
     def redirect_to_router_agent():
