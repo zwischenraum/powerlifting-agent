@@ -23,22 +23,6 @@ An AI-powered assistant for powerlifters that helps with rule interpretations, r
 - Docker and Docker Compose
 - OpenAI API key
 
-## Project Structure
-
-```
-.
-├── src/                    # Source code
-│   ├── __init__.py        # Package initialization
-│   ├── api.py             # FastAPI backend
-│   ├── frontend.py        # Streamlit frontend
-│   ├── main.py           # Application entry point
-│   ├── agent_setup.py    # Agent configuration
-│   └── rules_search.py   # IPF rulebook search implementation
-├── data/                  # Data files
-│   └── rulebook.txt      # IPF Technical Rules
-└── docker/               # Docker configuration
-```
-
 ## Installation
 
 1. Clone the repository:
