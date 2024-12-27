@@ -14,13 +14,30 @@ An AI-powered assistant for powerlifters that helps with rule interpretations, r
 - Built with Python 3.10+
 - Uses Qdrant vector database for semantic search
 - Multiple specialized agents powered by LLM for different tasks
-- Docker support for Qdrant deployment
+- FastAPI backend with Streamlit frontend
+- Docker containerization for all components
 
 ## Prerequisites
 
 - Python 3.10 or higher
 - Docker and Docker Compose
 - OpenAI API key
+
+## Project Structure
+
+```
+.
+├── src/                    # Source code
+│   ├── __init__.py        # Package initialization
+│   ├── api.py             # FastAPI backend
+│   ├── frontend.py        # Streamlit frontend
+│   ├── main.py           # Application entry point
+│   ├── agent_setup.py    # Agent configuration
+│   └── rules_search.py   # IPF rulebook search implementation
+├── data/                  # Data files
+│   └── rulebook.txt      # IPF Technical Rules
+└── docker/               # Docker configuration
+```
 
 ## Installation
 
@@ -35,28 +52,23 @@ cd powerlifting-agent
 poetry install
 ```
 
-3. Start Qdrant:
-```bash
-docker-compose up -d
-```
-
-4. Set up environment variables:
+3. Set up environment variables in `.env`:
 ```bash
 OPENAI_API_KEY=your-api-key
 OPENAI_BASE_URL=your-base-url  # Optional, if using a different endpoint
 ```
 
-## Usage
+## Running the Application
 
-Run the main application:
+Start all services using Docker Compose:
 ```bash
-poetry run python src/main.py
+docker compose up --build
 ```
 
-The agent will start in interactive mode where you can:
-- Ask questions about powerlifting rules
-- Look up competition records
-- Get general powerlifting advice
+This will start:
+- Qdrant vector database on port 6333
+- FastAPI backend on port 8000
+- Streamlit frontend on port 8501
 
 ## Development
 
@@ -64,6 +76,19 @@ The project uses Poetry for dependency management. To add new dependencies:
 ```bash
 poetry add package-name
 ```
+
+### Code Organization
+
+- `api.py`: FastAPI application with chat endpoints
+- `frontend.py`: Streamlit web interface
+- `agent_setup.py`: Configuration for different specialized agents
+- `rules_search.py`: Hybrid search implementation for IPF rulebook
+
+### Docker Configuration
+
+- `Dockerfile.server`: Backend service configuration
+- `Dockerfile.frontend`: Frontend service configuration
+- `docker-compose.yml`: Multi-container orchestration
 
 ## License
 
