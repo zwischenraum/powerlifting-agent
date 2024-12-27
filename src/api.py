@@ -61,10 +61,16 @@ async def chat(request: ChatRequest):
         raise
     except KeyError as e:
         logging.error(f"Invalid agent or configuration error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(
+            status_code=500, 
+            detail="Internal server error"
+        ) from e
     except Exception as e:
         logging.error(f"Error processing chat request: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(
+            status_code=500, 
+            detail="Internal server error"
+        ) from e
 
 
 @app.get("/health")
