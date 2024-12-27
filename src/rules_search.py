@@ -22,10 +22,10 @@ class RulesSearch:
     RRF_C = 60
 
     def __init__(
-        self, 
-        rules_file: str = "data/rulebook.txt", 
+        self,
+        rules_file: str = "data/rulebook.txt",
         openai_client: OpenAI = None,
-        embedding_model: str = "text-embedding-3-small"
+        embedding_model: str = "text-embedding-3-small",
     ):
         """Initialize the search engine.
 
@@ -104,7 +104,7 @@ class RulesSearch:
             logging.info(
                 f"Collection exists with {collection_info.points_count} vectors"
             )
-        except Exception as e:
+        except Exception:
             logging.info(f"Creating new collection: {collection_name}")
             self.qdrant.recreate_collection(
                 collection_name=collection_name,
@@ -121,9 +121,7 @@ class RulesSearch:
 
     def _get_embedding(self, text: str) -> List[float]:
         """Get embedding for text using OpenAI API."""
-        response = self.openai.embeddings.create(
-            model=self.embedding_model, input=text
-        )
+        response = self.openai.embeddings.create(model=self.embedding_model, input=text)
         return response.data[0].embedding
 
     def _upload_texts(self):
@@ -145,7 +143,7 @@ class RulesSearch:
             points = [
                 models.PointStruct(id=i, vector=embedding, payload={"text": chunk})
                 for i, (chunk, embedding) in enumerate(
-                    zip(self.rules_chunks, embeddings)
+                    zip(self.rules_chunks, embeddings, strict=False)
                 )
             ]
 

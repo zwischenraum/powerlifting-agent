@@ -44,20 +44,15 @@ async def chat(request: ChatRequest):
 
         if request.agent_name not in agents:
             raise HTTPException(
-                status_code=400, 
-                detail=f"Unknown agent: {request.agent_name}"
+                status_code=400, detail=f"Unknown agent: {request.agent_name}"
             )
 
         if not request.messages:
-            raise HTTPException(
-                status_code=400, 
-                detail="No messages provided"
-            )
+            raise HTTPException(status_code=400, detail="No messages provided")
 
         # Get response from swarm
         response = swarm.run(
-            agent=agents[request.agent_name], 
-            messages=request.messages
+            agent=agents[request.agent_name], messages=request.messages
         )
         logging.info(f"Agent '{response.agent.name}' generated response")
 
@@ -67,16 +62,10 @@ async def chat(request: ChatRequest):
         raise
     except KeyError as e:
         logging.error(f"Invalid agent or configuration error: {str(e)}")
-        raise HTTPException(
-            status_code=500, 
-            detail="Internal server error"
-        ) from e
+        raise HTTPException(status_code=500, detail="Internal server error") from e
     except Exception as e:
         logging.error(f"Error processing chat request: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=500, 
-            detail="Internal server error"
-        ) from e
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @app.get("/health")
