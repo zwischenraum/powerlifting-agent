@@ -59,7 +59,8 @@ if prompt := st.chat_input("Ask your question..."):
             # Display assistant message with agent info
             with st.chat_message("assistant"):
                 st.write(
-                    f"[{st.session_state.current_agent.capitalize()} Agent] {last_message['content']}"
+                    f"[{st.session_state.current_agent.capitalize()} Agent] "
+                    f"{last_message['content']}"
                 )
 
         except requests.exceptions.Timeout:

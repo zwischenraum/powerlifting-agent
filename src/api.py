@@ -38,20 +38,26 @@ async def chat(request: ChatRequest):
     """
     try:
         logging.info(
-            f"Received chat request for agent '{request.agent_name}' with {len(request.messages)} messages"
+            f"Received chat request for agent '{request.agent_name}' "
+            f"with {len(request.messages)} messages"
         )
 
         if request.agent_name not in agents:
             raise HTTPException(
-                status_code=400, detail=f"Unknown agent: {request.agent_name}"
+                status_code=400, 
+                detail=f"Unknown agent: {request.agent_name}"
             )
 
         if not request.messages:
-            raise HTTPException(status_code=400, detail="No messages provided")
+            raise HTTPException(
+                status_code=400, 
+                detail="No messages provided"
+            )
 
         # Get response from swarm
         response = swarm.run(
-            agent=agents[request.agent_name], messages=request.messages
+            agent=agents[request.agent_name], 
+            messages=request.messages
         )
         logging.info(f"Agent '{response.agent.name}' generated response")
 
