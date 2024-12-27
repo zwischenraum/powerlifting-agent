@@ -1,5 +1,7 @@
 # Powerlifting Agent
 
+[![CI](https://github.com/yourusername/powerlifting-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/powerlifting-agent/actions/workflows/ci.yml)
+
 An AI-powered assistant for powerlifters that helps with rule interpretations, record lookups, and general powerlifting discussions.
 
 ## Features
@@ -80,7 +82,7 @@ poetry add package-name
 - [ ] Add video support for form checks (difficult)
 - [ ] Add a programming agent that helps you design and improve
   your training programm
-- [ ] Add a CI pipeline
+- [x] Add a CI pipeline
 
 ## License
 
