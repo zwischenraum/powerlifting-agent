@@ -1,6 +1,6 @@
 # Powerlifting Agent
 
-[![CI](https://github.com/yourusername/powerlifting-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/powerlifting-agent/actions/workflows/ci.yml)
+![CI](https://github.com/yourusername/powerlifting-agent/actions/workflows/ci.yml/badge.svg)
 
 An AI-powered assistant for powerlifters that helps with rule interpretations, record lookups, and general powerlifting discussions.
 

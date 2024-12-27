@@ -31,3 +31,9 @@ jobs:
         
     - name: Run Ruff
       run: poetry run ruff check .
+
+    - name: Build Backend Container
+      run: docker build -t powerlifting-backend -f Dockerfile.server .
+
+    - name: Build Frontend Container
+      run: docker build -t powerlifting-frontend -f Dockerfile.frontend .
