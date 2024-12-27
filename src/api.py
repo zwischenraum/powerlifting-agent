@@ -34,7 +34,8 @@ class ChatRequest(BaseModel):
 @app.post("/chat")
 async def chat(request: ChatRequest):
     """
-    Chat endpoint that processes messages and returns responses from the appropriate agent.
+    Chat endpoint that processes messages and returns responses from the \
+    appropriate agent.
     """
     try:
         logging.info(
